@@ -12,6 +12,7 @@ use crate::queue::StopReason;
 
 const SELECTED_BG: Color = Color::Rgb(40, 44, 48);
 const BORDER_COLOR: Color = Color::Rgb(88, 110, 117);
+const MUTED_COLOR: Color = Color::Rgb(88, 110, 117);
 
 /// Formats relative age as `Xs`, `Xm`, `Xh`, or `Xd` (right-aligned to 4 chars by caller).
 pub fn format_relative_age(timestamp: DateTime<Utc>, now: DateTime<Utc>) -> String {
@@ -149,11 +150,11 @@ pub fn format_header_labels(app: &App) -> (String, String) {
 pub fn format_footer_text(app: &App) -> String {
     if app.search_active {
         let q = app.search.as_deref().unwrap_or("");
-        format!("search {q}  (enter to filter · esc to cancel)")
+        format!(" search: {q}  (enter to filter · esc to cancel)")
     } else if let Some(ref q) = app.search {
-        format!("filter: {q} (j/k navigate · enter jump · / edit · esc to clear)")
+        format!(" filter: {q}  (j/k navigate · enter jump · / edit · esc to clear)")
     } else {
-        "j/k navigate h/l waiting/history enter jump  o peek  d dismiss  / search  q quit"
+        " j/k navigate  h/l waiting/history  enter jump  o peek  d dismiss  / search  q quit"
             .to_string()
     }
 }
@@ -184,7 +185,7 @@ fn draw_header(frame: &mut Frame, app: &App, area: ratatui::layout::Rect) {
     let active_style = Style::default()
         .fg(Color::Green)
         .add_modifier(Modifier::BOLD);
-    let inactive_style = Style::default().fg(Color::Gray);
+    let inactive_style = Style::default().fg(MUTED_COLOR);
 
     let (waiting_style, history_style) = match app.filter {
         Filter::Waiting => (active_style, inactive_style),
@@ -269,7 +270,7 @@ fn draw_list(frame: &mut Frame, app: &App, area: ratatui::layout::Rect) {
                 row_base_style,
                 highlight_style,
             ));
-            spans.push(Span::styled(age_col, row_base_style.fg(Color::DarkGray)));
+            spans.push(Span::styled(age_col, row_base_style.fg(MUTED_COLOR)));
 
             ListItem::new(Line::from(spans)).style(row_base_style)
         })
@@ -285,13 +286,58 @@ fn draw_list(frame: &mut Frame, app: &App, area: ratatui::layout::Rect) {
 }
 
 fn draw_footer(frame: &mut Frame, app: &App, area: ratatui::layout::Rect) {
-    let text = format_footer_text(app);
-    let style = if app.search_active {
-        Style::default().fg(Color::Yellow)
+    let key_style = Style::default().fg(Color::Gray);
+    let desc_style = Style::default().fg(MUTED_COLOR);
+
+    let line = if app.search_active {
+        let q = app.search.as_deref().unwrap_or("");
+        Line::from(vec![
+            Span::styled(
+                " search: ",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(format!("{q}█"), Style::default().fg(Color::Yellow)),
+            Span::styled("  (enter to filter · esc to cancel)", desc_style),
+        ])
+    } else if let Some(ref q) = app.search {
+        Line::from(vec![
+            Span::styled(
+                " filter: ",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(q.clone(), Style::default().fg(Color::Yellow)),
+            Span::styled(
+                "  (j/k navigate · enter jump · / edit · esc to clear)",
+                desc_style,
+            ),
+        ])
     } else {
-        Style::default().fg(Color::Gray)
+        let bindings = [
+            ("j/k", "navigate"),
+            ("h/l", "waiting/history"),
+            ("enter", "jump"),
+            ("o", "peek"),
+            ("d", "dismiss"),
+            ("/", "search"),
+            ("q", "quit"),
+        ];
+        let mut spans = vec![Span::raw(" ")];
+        for (idx, (key, desc)) in bindings.iter().enumerate() {
+            if idx > 0 {
+                spans.push(Span::raw("  "));
+            }
+            spans.push(Span::styled(*key, key_style));
+            spans.push(Span::raw(" "));
+            spans.push(Span::styled(*desc, desc_style));
+        }
+        Line::from(spans)
     };
-    let footer = Paragraph::new(Line::from(Span::styled(text, style)));
+
+    let footer = Paragraph::new(line);
     frame.render_widget(footer, area);
 }
 

@@ -136,14 +136,13 @@ impl App {
                     let _ = jump_to_pane(&entry);
                     if self.filter == Filter::Waiting {
                         let _ = mark_visited_in(&self.queue_dir, &entry.pane_id);
+                        self.reload()?;
                     }
-                    self.running = false;
                 }
             }
             Action::Open => {
                 if let Some(entry) = self.selected_entry() {
                     let _ = jump_to_pane(&entry);
-                    self.running = false;
                 }
             }
             Action::Dismiss => {

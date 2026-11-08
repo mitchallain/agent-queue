@@ -11,6 +11,7 @@ use crate::app::{App, Filter};
 use crate::queue::StopReason;
 
 const SELECTED_BG: Color = Color::Rgb(40, 44, 48);
+const BORDER_COLOR: Color = Color::Rgb(88, 110, 117);
 
 /// Formats relative age as `Xs`, `Xm`, `Xh`, or `Xd` (right-aligned to 4 chars by caller).
 pub fn format_relative_age(timestamp: DateTime<Utc>, now: DateTime<Utc>) -> String {
@@ -199,6 +200,7 @@ fn draw_header(frame: &mut Frame, app: &App, area: ratatui::layout::Rect) {
 
     let block = Block::default()
         .borders(Borders::ALL)
+        .border_style(Style::default().fg(BORDER_COLOR))
         .title(Span::styled(
             " agent-queue ",
             Style::default()
@@ -213,6 +215,7 @@ fn draw_header(frame: &mut Frame, app: &App, area: ratatui::layout::Rect) {
 fn draw_list(frame: &mut Frame, app: &App, area: ratatui::layout::Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
+        .border_style(Style::default().fg(BORDER_COLOR))
         .padding(Padding::horizontal(1));
     let inner_width = block.inner(area).width as usize;
 
